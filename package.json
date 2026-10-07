@@ -5,7 +5,7 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder"
+    "dist": "electron-builder"
   },
   "repository": {
     "type": "git",
@@ -22,5 +22,59 @@
   "license": "MIT",
   "devDependencies": {
     "electron": "^33.2.1"
+  },
+  "build": {
+    "appId": "com.oswanyunus.resonance",
+    "productName": "Resonance",
+    "copyright": "Copyright © 2026 Oswan Yunus",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "icon.ico",
+      "fileAssociations": [
+        {
+          "ext": "mp3",
+          "name": "MP3 Audio",
+          "role": "Viewer"
+        },
+        {
+          "ext": "flac",
+          "name": "FLAC Audio",
+          "role": "Viewer"
+        },
+        {
+          "ext": "m4a",
+          "name": "M4A Audio",
+          "role": "Viewer"
+        },
+        {
+          "ext": "wav",
+          "name": "WAV Audio",
+          "role": "Viewer"
+        },
+        {
+          "ext": "ogg",
+          "name": "OGG Audio",
+          "role": "Viewer"
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Resonance",
+      "installerIcon": "icon.ico",
+      "uninstallerIcon": "icon.ico",
+      "deleteAppDataOnUninstall": false
+    }
   }
 }
