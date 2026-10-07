@@ -60,10 +60,18 @@ button.on{background:var(--flare)}button.on span{background:var(--flare);color:#
 .pl-play-btn{font-size:11px;font-weight:700;color:var(--lilac);padding:4px 8px;border:1px solid var(--line);background:#180f38;clip-path:polygon(4px 0,100% 0,100% calc(100% - 4px),calc(100% - 4px) 100%,0 100%,0 4px)}
 .pl-item:hover .pl-play-btn,.pl-item.cur .pl-play-btn{color:#fff;border-color:var(--flare);background:var(--flare)}
 .pl-foot{font-size:11px;color:var(--dim);margin-top:10px;line-height:1.35}
+#dbar{position:fixed;top:0;left:0;right:0;height:32px;display:none;align-items:center;justify-content:space-between;padding:0 12px;background:rgba(9,5,25,.85);backdrop-filter:blur(10px);z-index:99;border-bottom:1px solid rgba(64,51,122,.3);-webkit-app-region:drag;user-select:none}
+.dbar-title{font-size:12px;font-weight:800;letter-spacing:.05em;color:var(--dim);display:flex;align-items:center;gap:8px}
+.dbar-controls{display:flex;gap:4px;-webkit-app-region:no-drag}
+.dbar-btn{background:transparent;border:0;color:var(--dim);font-size:13px;width:28px;height:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;clip-path:none;padding:0}
+.dbar-btn span{background:transparent;padding:0;font-size:13px;clip-path:none}
+.dbar-btn:hover{color:var(--lilac);background:#1b1340}
+.dbar-btn.close:hover{background:#ff4f86;color:#fff}
 @media (max-width:560px){#hint{max-width:100%;order:2}.mt{width:165px}button span{padding:10px 13px;font-size:13px}}
 </style>
 </head>
 <body>
+<div id="dbar"><div class="dbar-title"><svg width="14" height="14" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#ff4f86"/><rect x="18" y="14" width="6" height="36" rx="3" fill="#090519"/><rect x="30" y="8" width="6" height="48" rx="3" fill="#090519"/><rect x="42" y="20" width="6" height="24" rx="3" fill="#090519"/></svg><span>RESONANCE</span></div><div class="dbar-controls"><button class="dbar-btn" id="d-pin" title="Pin Always on Top"><span>📌</span></button><button class="dbar-btn" id="d-min" title="Minimize"><span>—</span></button><button class="dbar-btn" id="d-max" title="Maximize"><span>◻</span></button><button class="dbar-btn close" id="d-close" title="Close"><span>✕</span></button></div></div>
 <canvas id="c" aria-label="Music visualizer"></canvas><div class="vig"></div>
 <header class="top"><div><h1>Resonance</h1><div id="now">Nothing playing</div></div><div class="mt"><div class="cap" style="margin:0">Loudest pitch</div><div id="pn">–</div><div id="rows"></div><div class="cap">Levels are estimated from the sound's frequencies, not read from separate instrument tracks.</div></div></header>
 <div id="sr"><div id="sri"><input id="q" type="search" placeholder="Search a song or artist" autocomplete="off" aria-label="Search for a song"><div id="st" role="status"></div><div id="rs"></div><div id="cr"><a id="full" target="_blank" rel="noopener" hidden>Open the full song in Apple Music</a><p>Clips are 30-second previews with artwork from Apple Music. Playing a whole song in Spotify or Apple Music? Tap Microphone and play it nearby.</p></div></div></div>
@@ -113,7 +121,8 @@ const bw=()=>ac.sampleRate/an.fftSize;
 function band(lo,hi){const a=Math.max(1,(lo/bw())|0),b=Math.min(fd.length-1,(hi/bw())|0);let s=0;for(let i=a;i<=b;i++)s+=fd[i];return s/(b-a+1)/255}
 let O={};function onset(k,v,cool,sens=1,floor=.025){const o=O[k]||(O[k]={p:0,a:.018,c:0});const f=Math.max(0,v-o.p);o.p=o.p*.2+v*.8;const hit=v>floor*2.2&&f>o.a*(1.75/sens)+floor&&o.c<=0;o.a=o.a*.9+f*.1;o.c--;if(hit)o.c=cool;return hit?Math.min(1,(f-floor)*7*sens+.35):0}
 const lv=new Array(32).fill(0),sc=v=>Math.max(0,Math.min(1,(v-.2)*1.7)),NN=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
-let gfm=0,pa=0,sus=0,pn=.5,pf=0,kp=0,syncPulse=0,EV=[],ei=0,PS=null,pdt=.0145,lastPos=0,scanTok=0,sy=0,sI=0,pcd=0;const DQ=[],LAT=()=>(ac?(ac.outputLatency||0):0)+sy,dq=(t,i,v)=>DQ.push({t,i,v}),lowB=t=>{let a=0,b=EV.length;while(a<b){const m=(a+b)>>1;EV[m].t<t?a=m+1:b=m}return a};
+let gfm=0,pa=0,sus=0,pn=.5,pf=0,kp=0,syncPulse=0,EV=[],ei=0,PS=null,pdt=.0145,lastPos=0,scanTok=0,sy=0,sI=0,pcd=0;
+const DQ=[],LAT=()=>{if(!ac)return sy;const hw=(ac.outputLatency||0)+(ac.baseLatency||0);return (hw>0?hw:.025)+sy},dq=(t,i,v)=>DQ.push({t,i,v}),lowB=t=>{let a=0,b=EV.length;while(a<b){const m=(a+b)>>1;EV[m].t<t?a=m+1:b=m}return a};
 const ML=new Float32Array(260).fill(-9);
 const SH=[],SP=[];
 function tn(lo,hi){const a=Math.max(1,(lo/bw())|0),b=Math.min(fd.length-1,(hi/bw())|0);let q=0,m=0;for(let i=a;i<=b;i++){q+=fd[i];if(fd[i]>m)m=fd[i]}const av=q/(b-a+1);return av>2?Math.max(0,Math.min(1,(m/av-2)/8)):0}
@@ -299,6 +308,38 @@ $('plc').onclick=()=>{$('pl').style.display='none'};
 addEventListener('keydown',e=>{if(e.code=='Space'&&e.target.tagName!='INPUT'){e.preventDefault();pbtn.click()}});
 cv.onpointerdown=e=>{cv.setPointerCapture(e.pointerId);M.x=e.clientX;M.y=e.clientY;M.down=true};
 cv.onpointermove=e=>{M.x=e.clientX;M.y=e.clientY};cv.onpointerup=cv.onpointercancel=()=>{M.down=false};
+
+/* ---------- desktop app enhancements ---------- */
+if(window.desktopAPI){
+ $('dbar').style.display='flex';
+ document.body.style.paddingTop='32px';
+ let pinned=false;
+ $('d-pin').onclick=()=>{
+  pinned=!pinned;
+  window.desktopAPI.setAlwaysOnTop(pinned);
+  $('d-pin').style.color=pinned?'var(--flare)':'var(--dim)';
+ };
+ $('d-min').onclick=()=>window.desktopAPI.minimize();
+ $('d-max').onclick=()=>window.desktopAPI.maximize();
+ $('d-close').onclick=()=>window.desktopAPI.close();
+
+ // Media keys (Hardware buttons on keyboard / headset)
+ window.desktopAPI.onMediaKey(action=>{
+  if(action==='play-pause')pbtn.click();
+  else if(action==='next'&&QU.length)playIdx((qix+1)%QU.length);
+  else if(action==='prev'&&QU.length)playIdx((qix-1+QU.length)%QU.length);
+ });
+
+ // Launch via "Open With..." or drag onto desktop icon
+ window.desktopAPI.onOpenFile(async filePath=>{
+  const res=await window.desktopAPI.readLocalFile(filePath);
+  if(res.success){
+   const blob=new Blob([res.data]);
+   const file=new File([blob],res.name,{type:'audio/*'});
+   addFiles([file]);
+  }
+ });
+}
 
 /* ---------- creator's playlist ---------- */
 let CREATOR_SONGS=[{title:'21 Guns',artist:'Green Day',file:'songs/21-guns.m4a'}];

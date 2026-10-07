@@ -1,0 +1,26 @@
+{
+  "name": "resonance",
+  "version": "1.0.0",
+  "description": "Real-time 24-instrument audio visualizer and media player",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/resonance-hz/resonance-hz.github.io.git"
+  },
+  "keywords": [
+    "music",
+    "audio",
+    "visualizer",
+    "player",
+    "vlc"
+  ],
+  "author": "OswanYunus",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^44.6.0"
+  }
+}
