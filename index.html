@@ -381,13 +381,55 @@ async function doSearch(){const q=$('q').value.trim();if(q.length<2)return;const
  try{const r=await itunes(q);if(my!==sTok)return;if(!r.length){stat('No clips found for "'+q+'". Try the song title only, or title and artist.');return}QU=r;qix=-1;PC.clear();renderList();stat(r.length+' results. Tap a song to hear its clip. The next ones follow automatically.')}
  catch(e){if(my!==sTok)return;stat("Couldn't reach Apple's search ("+(e&&e.message||'blocked')+"). Check your connection, or open the file from a web address instead of from your device if this keeps happening.")}}
 $('q').oninput=()=>{clearTimeout(qT);qT=setTimeout(doSearch,550)};$('q').onkeydown=e=>{if(e.key=='Enter'){clearTimeout(qT);doSearch()}};
-function prep(t,bg){const k=t.id;if(!PC.has(k)){if(PC.size>5)PC.delete(PC.keys().next().value);const pr=(async()=>{const ab=t.file?await t.file.arrayBuffer():await(await fetch(t.url)).arrayBuffer(),b=await ac.decodeAudioData(ab),r=await scan(b,scanTok,bg);if(!r)throw new Error('cancelled');return{b,r}})();pr.catch(()=>PC.delete(k));PC.set(k,pr)}return PC.get(k)}
-function startClip(p,t){fails=0;if(mic){mic.getTracks().forEach(x=>x.stop());mic=null}if(msn){msn.disconnect();msn=null}killEl();demo=false;DQ.length=0;out.gain.value=vol;buf=p.b;EV=p.r.ev;PS=p.r.P;pdt=p.r.dt;playFile(0);say('Playing. Every hit comes from this clip, so only what it really plays shows up.');showFull(t)}
-function streamClip(t,my){return new Promise((res,rej)=>{const a=new Audio();a.crossOrigin='anonymous';a.src=t.url;a.onerror=()=>rej(new Error('blocked'));a.oncanplay=()=>{a.oncanplay=null;if(my!==playTok)return rej(new Error('stale'));if(src){src.onended=null;try{src.stop()}catch(e){}src=null}killEl();el=a;mes=ac.createMediaElementSource(a);mes.connect(an);EV=[];PS=null;demo=false;srcm='stream';$('sk').style.display='none';a.onended=()=>{if(QU.length)playIdx((qix+1)%QU.length)};a.play().then(res,rej)}})}
-async function playIdx(i){if(!QU[i])return;init();clearLyrics();qix=i;const t=QU[i],my=++playTok;mark();pbtn.firstChild.textContent='Pause';$('now').textContent=t.title+' · '+t.artist+(t.file||t.isCreator?'':' · 30 s preview');say('Getting the track ready so every hit lines up …');
+function prep(t,bg){const k=t.id;if(!PC.has(k)){if(PC.size>5)PC.delete(PC.keys().next().value);const pr=(async()=>{
+  let ab;
+  if(t.file){ab=await t.file.arrayBuffer()}
+  else{
+   say('Downloading "'+t.title+'" …');
+   const res=await fetch(t.url);
+   if(!res.ok)throw new Error('HTTP '+res.status);
+   const clen=res.headers.get('content-length'),total=clen?parseInt(clen,10):0;
+   if(res.body&&total>0){
+    const reader=res.body.getReader(),chunks=[];let received=0;
+    while(true){
+     const{done,value}=await reader.read();
+     if(done)break;
+     chunks.push(value);received+=value.length;
+     if(!bg)say('Downloading "'+t.title+'" … '+Math.round(received/total*100)+'%');
+    }
+    const merged=new Uint8Array(received);let off=0;
+    for(const c of chunks){merged.set(c,off);off+=c.length}
+    ab=merged.buffer;
+   }else{ab=await res.arrayBuffer()}
+  }
+  say('Decoding audio …');
+  let b;
+  try{b=await ac.decodeAudioData(ab)}
+  catch(decErr){
+   console.warn('decodeAudioData failed:',decErr);
+   throw decErr;
+  }
+  say('Analysing track beats & frequencies …');
+  const r=await scan(b,scanTok,bg);
+  if(!r)throw new Error('cancelled');
+  return{b,r}
+ })();
+ pr.catch(()=>PC.delete(k));PC.set(k,pr)}return PC.get(k)}
+function startClip(p,t){fails=0;if(mic){mic.getTracks().forEach(x=>x.stop());mic=null}if(msn){msn.disconnect();msn=null}killEl();demo=false;DQ.length=0;out.gain.value=vol;buf=p.b;EV=p.r.ev;PS=p.r.P;pdt=p.r.dt;playFile(0);say('Playing "'+t.title+'". Tap the line above the buttons to seek.');showFull(t)}
+function streamClip(t,my){return new Promise((res,rej)=>{const a=new Audio();a.crossOrigin='anonymous';a.src=t.url;a.onerror=e=>rej(new Error('Audio stream error'));a.oncanplay=()=>{a.oncanplay=null;if(my!==playTok)return rej(new Error('stale'));if(src){src.onended=null;try{src.stop()}catch(e){}src=null}killEl();el=a;mes=ac.createMediaElementSource(a);mes.connect(an);EV=[];PS=null;demo=false;srcm='stream';$('sk').style.display='none';a.onended=()=>{if(QU.length)playIdx((qix+1)%QU.length)};a.play().then(res,rej)}})}
+async function playIdx(i){if(!QU[i])return;init();clearLyrics();qix=i;const t=QU[i],my=++playTok;mark();pbtn.firstChild.textContent='Pause';$('now').textContent=t.title+' · '+t.artist+(t.file||t.isCreator?'':' · 30 s preview');say('Preparing "'+t.title+'" …');
  let p;try{p=await prep(t,false)}catch(e){if(my!==playTok)return;
-  if(!t.file&&!t.isCreator){try{await streamClip(t,my);showFull(t);say('Playing with live analysis. Sync is looser for this clip.');return}catch(e2){}}
-  if(my!==playTok)return;fails++;if(QU.length>1&&fails<QU.length){say("That track can't be read here. Trying the next one …");setTimeout(()=>{if(my===playTok)playIdx((i+1)%QU.length)},900)}else say("This track can't be read here. Open the full song, or play it elsewhere and use Microphone.");showFull(t);return}
+  console.error('Track prep error for',t.title,e);
+  if(!t.file){
+   try{
+    say('Playing stream with live analysis …');
+    await streamClip(t,my);showFull(t);
+    return;
+   }catch(e2){
+    console.error('streamClip error:',e2);
+   }
+  }
+  if(my!==playTok)return;fails++;if(QU.length>1&&fails<QU.length){say("Could not load "+t.title+". Trying the next song …");setTimeout(()=>{if(my===playTok)playIdx((i+1)%QU.length)},1200)}else say("Could not decode "+t.title+". Try a different audio format.");showFull(t);return}
  if(my!==playTok)return;startClip(p,t);if(t.file||t.isCreator)lyricsFor(t,p.b.duration,my,t.meta);if(QU[i+1])prep(QU[i+1],true).catch(()=>{})}
 function addFiles(fl){const a=[...fl].filter(f=>/audio|\.(mp3|m4a|wav|ogg|flac)$/i.test(f.type+f.name));if(!a.length)return;init();QU=a.map(f=>({id:'f'+f.name+f.size,title:f.name.replace(/\.[^.]+$/,''),artist:'My music',file:f,art:''}));qix=-1;PC.clear();renderList();playIdx(0)}
 
