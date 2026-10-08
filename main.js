@@ -10,6 +10,32 @@ app.commandLine.appendSwitch('enable-highres-timer');
 
 let mainWindow = null;
 
+// ---------- Single instance lock (VLC-like behavior) ----------
+// If a second instance is launched (e.g. double-clicking another audio file),
+// don't open a new window. Instead, send the file to the existing window.
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  // Another instance is already running — it will receive our argv via
+  // the 'second-instance' event. Just quit this duplicate.
+  app.quit();
+} else {
+  app.on('second-instance', (event, argv) => {
+    // Find the file path from the new instance's arguments
+    const filePath = argv.slice(app.isPackaged ? 1 : 2).find(a => {
+      try { return fs.existsSync(a) && fs.statSync(a).isFile(); } catch { return false; }
+    });
+    if (mainWindow) {
+      // Bring existing window to front
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+      // Send the new file to the renderer to play it
+      if (filePath) {
+        mainWindow.webContents.send('open-file', filePath);
+      }
+    }
+  });
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1280,
@@ -36,8 +62,11 @@ function createWindow() {
     mainWindow.show();
     // If a file was passed as a launch argument (e.g. Open With...)
     const args = process.argv.slice(app.isPackaged ? 1 : 2);
-    if (args.length > 0 && fs.existsSync(args[0])) {
-      mainWindow.webContents.send('open-file', args[0]);
+    const filePath = args.find(a => {
+      try { return fs.existsSync(a) && fs.statSync(a).isFile(); } catch { return false; }
+    });
+    if (filePath) {
+      mainWindow.webContents.send('open-file', filePath);
     }
   });
 
