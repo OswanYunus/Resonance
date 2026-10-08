@@ -1,37 +1,51 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
   <defs>
-    <linearGradient id="neonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#ff4f86" />
-      <stop offset="50%" stop-color="#9b51e0" />
-      <stop offset="100%" stop-color="#4ff0ff" />
+    <radialGradient id="jackGlow" cx="50%" cy="55%" r="50%">
+      <stop offset="0%" stop-color="#ff9a2e" />
+      <stop offset="70%" stop-color="#e05400" />
+      <stop offset="100%" stop-color="#8a2000" />
+    </radialGradient>
+    <linearGradient id="stemGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#55aa33" />
+      <stop offset="100%" stop-color="#2a5a15" />
     </linearGradient>
-    <linearGradient id="barGrad" x1="0%" y1="100%" x2="0%" y2="0%">
-      <stop offset="0%" stop-color="#6a4bff" />
-      <stop offset="60%" stop-color="#ff4f86" />
-      <stop offset="100%" stop-color="#4ff0ff" />
-    </linearGradient>
-    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+    <filter id="spookyGlow" x="-25%" y="-25%" width="150%" height="150%">
       <feGaussianBlur stdDeviation="1.5" result="blur" />
       <feComposite in="SourceGraphic" in2="blur" operator="over" />
     </filter>
   </defs>
 
-  <!-- Dark container background with neon border -->
-  <rect width="64" height="64" rx="16" fill="#090519" />
-  <rect x="1" y="1" width="62" height="62" rx="15" fill="none" stroke="url(#neonGrad)" stroke-width="1.8" opacity="0.65" />
+  <!-- Dark spooky container with eerie violet-amber border -->
+  <rect width="64" height="64" rx="16" fill="#0c0715" />
+  <rect x="1" y="1" width="62" height="62" rx="15" fill="none" stroke="#e05400" stroke-width="1.8" opacity="0.75" />
 
-  <!-- Acoustic soundwave / frequency bars -->
-  <g filter="url(#glow)">
-    <!-- Wave bars with rounded caps -->
-    <rect x="11" y="26" width="4.5" height="12" rx="2.25" fill="url(#barGrad)" opacity="0.75" />
-    <rect x="19" y="18" width="4.5" height="28" rx="2.25" fill="url(#barGrad)" opacity="0.9" />
-    <rect x="27" y="10" width="4.5" height="44" rx="2.25" fill="url(#barGrad)" />
-    <rect x="35" y="16" width="4.5" height="32" rx="2.25" fill="url(#barGrad)" />
-    <rect x="43" y="22" width="4.5" height="20" rx="2.25" fill="url(#barGrad)" opacity="0.9" />
-    <rect x="51" y="28" width="4.5" height="8" rx="2.25" fill="url(#barGrad)" opacity="0.75" />
+  <!-- Pumpkin Stem -->
+  <path d="M30 14 C30 9, 36 7, 39 8 C38 11, 35 12, 33 15 Z" fill="url(#stemGrad)" />
+
+  <!-- Pumpkin Body (acoustic ribs silhouette) -->
+  <g filter="url(#spookyGlow)">
+    <!-- Outer lateral lobes -->
+    <ellipse cx="19" cy="36" rx="10" ry="17" fill="url(#jackGlow)" opacity="0.9" />
+    <ellipse cx="45" cy="36" rx="10" ry="17" fill="url(#jackGlow)" opacity="0.9" />
+    <!-- Mid lobes -->
+    <ellipse cx="25" cy="37" rx="9" ry="18.5" fill="url(#jackGlow)" />
+    <ellipse cx="39" cy="37" rx="9" ry="18.5" fill="url(#jackGlow)" />
+    <!-- Central lobe -->
+    <ellipse cx="32" cy="38" rx="8" ry="19" fill="url(#jackGlow)" />
   </g>
 
-  <!-- Subtle pulse dots -->
-  <circle cx="29.25" cy="8" r="1.5" fill="#4ff0ff" />
-  <circle cx="21.25" cy="15" r="1.2" fill="#ff4f86" />
+  <!-- Carved Soundwave Face (Spectral Jack-o'-Lantern) -->
+  <!-- Left Eye: sharp jagged triangle -->
+  <polygon points="21,30 27,33 22,36" fill="#0c0715" />
+  <!-- Right Eye: sharp jagged triangle -->
+  <polygon points="43,30 37,33 42,36" fill="#0c0715" />
+  <!-- Nose: inverted triangular notch -->
+  <polygon points="32,34 30,38 34,38" fill="#0c0715" />
+
+  <!-- Mouth: Audio waveform / equalizer jack smile -->
+  <path d="M19 44 Q32 54 45 44 L43 47 L39 45 L36 49 L32 46 L28 49 L25 45 L21 47 Z" fill="#0c0715" />
+
+  <!-- Spectral fire sparks (acoustic frequency particles) -->
+  <circle cx="16" cy="19" r="1.2" fill="#7aff9e" opacity="0.85" />
+  <circle cx="48" cy="18" r="1.4" fill="#ff7a1a" opacity="0.9" />
 </svg>
